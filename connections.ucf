@@ -1,0 +1,18 @@
+
+# PlanAhead Generated physical constraints 
+
+NET "SOURCE[2]" LOC = E4;
+NET "SOURCE[1]" LOC = T5;
+NET "SOURCE[0]" LOC = R5;
+NET "VOLUME[4]" LOC = P12;
+NET "VOLUME[3]" LOC = P15;
+NET "VOLUME[2]" LOC = C14;
+NET "VOLUME[1]" LOC = D14;
+NET "clk" LOC = L15;
+NET "BIT_CLK" LOC = L13;
+NET "SDATA_IN" LOC = T18;
+NET "SDATA_OUT" LOC = N16;
+NET "SYNC" LOC = U17;
+NET "AC97_n_RESET" LOC = T17;
+NET "n_reset" LOC = T15;
+NET "VOLUME[0]" LOC = A10;
