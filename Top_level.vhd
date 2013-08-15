@@ -2,19 +2,21 @@
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.numeric_std.all;
 use work.AUDIO.all;	
 
 
 entity Top_level is
-    Port ( clk : in  STD_LOGIC;
-			n_reset : in  STD_LOGIC;
-			  SDATA_IN : in STD_LOGIC;
-			  BIT_CLK : in STD_LOGIC;
-			  SOURCE : in STD_LOGIC_VECTOR(2 downto 0);
-			  VOLUME : in STD_LOGIC_VECTOR(4 downto 0);
-			  SYNC : out STD_LOGIC;
-			  SDATA_OUT : out STD_LOGIC;
-			  AC97_n_RESET : out STD_LOGIC
+		Port ( 	clk 		: in  STD_LOGIC;
+				n_reset 	: in  STD_LOGIC;
+				SDATA_IN 	: in STD_LOGIC;
+				BIT_CLK 	: in STD_LOGIC;
+				SOURCE 		: in STD_LOGIC_VECTOR(2 downto 0);
+				VOLUME_UP 	: in std_LOGIC;
+				VOLUME_DOWN : in std_LOGIC;
+				SYNC 		: out STD_LOGIC;
+				SDATA_OUT 	: out STD_LOGIC;
+				AC97_n_RESET : out STD_LOGIC
 			  );
 end Top_level;
 
@@ -26,6 +28,10 @@ architecture arch of Top_level is
 	signal cmd_data : std_logic_vector(15 downto 0);
 	signal ready : std_logic;
 	signal cmd_ready : std_logic;
+	signal volume : std_logic_vector(4 downto 0):="00000";
+	signal volume_pushbutton_pre_state : std_logic:='0';
+	
+
 
 begin
 		
@@ -52,13 +58,35 @@ begin
 				ac97_ready_sig => ready, 
 				cmd_addr => cmd_addr,
 				cmd_data => cmd_data, 
-				volume => VOLUME, 
+				volume => volume, 
 				source => SOURCE, 
 				cmd_ready => cmd_ready);  
 
 	
 	-------------------------------------------------------------------------------
-
+	-- VOLUME 
+	-- The volume is coded on 5 bit = 32 so 4*8 = 32, it takes 8 clicks to go from min to max volume
+	process (clk)
+	
+	begin
+	if rising_edge(clk) then 
+		if VOLUME_UP = '1' and volume_pushbutton_pre_state = '0' then 
+			--volume <= volume(3 downto 0) & '0';
+			if volume /= "11111" then 
+				volume <= std_logic_vector(unsigned (volume) + 4);
+			end if ;
+		elsif VOLUME_DOWN = '1' and volume_pushbutton_pre_state = '0' then 
+			--volume <= '0' & volume(4 downto 1);
+			if volume /= "00000" then 
+				volume <= std_logic_vector(unsigned (volume) - 4);
+			end if ;
+		end if;
+		volume_pushbutton_pre_state <= VOLUME_UP or VOLUME_DOWN;
+			
+	end if;	
+	end process;
+	
+	-- TALK TROUGHT
 	process ( clk, n_reset, L_bus_out, R_bus_out)
   
 	begin		
