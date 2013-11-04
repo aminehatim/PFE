@@ -6,6 +6,7 @@ use IEEE.numeric_std.all;
 use work.AUDIO.all;	
 
 
+
 entity Top_level is
 		Port ( 	clk 		: in  STD_LOGIC;
 				n_reset 	: in  STD_LOGIC;
@@ -33,8 +34,10 @@ architecture arch of Top_level is
 	signal source_pushbutton_pre_state : std_logic:='0';
 	signal volume_pushbutton_pre_state : std_logic:='0';
 	signal source_select : std_logic:= '0'; 
-	
-
+	signal bit_count    	: integer range 0 to 255;
+	signal clock_enable	:std_logic:='0';
+	signal p_reset	: std_logic;
+	signal audio_clock : std_logic;
 
 begin
 		
@@ -65,8 +68,53 @@ begin
 				source => source_val, 
 				cmd_ready => cmd_ready);  
 
+	fir_filter_left : entity work.low_pass_fir
+		port map (
+				clk =>  BIT_CLK,                        
+                clk_enable => clock_enable,                    
+                reset => p_reset,                          
+                filter_in => L_bus_out,                    
+				filter_out => L_bus
+		);
+	fir_filter_rigth : entity work.low_pass_fir
+		port map (
+				clk =>  BIT_CLK,                         
+                clk_enable => clock_enable,                     
+                reset => p_reset,                          
+                filter_in => R_bus_out,                    
+				filter_out => R_bus
+		);	
+		
 	
 	-------------------------------------------------------------------------------
+	p_reset <= not n_reset;
+	clock_enable <='1' ;
+	-- BIT COUNTER 
+	process (BIT_CLK)
+	begin
+	if rising_edge(BIT_CLK) then 
+		if n_reset = '0' then 
+			bit_count <= 0;
+		elsif bit_count = 255 then 
+		else
+			bit_count <= bit_count + 1;
+		end if;
+	end if;
+	end process;
+	
+	-- Generate the 48khz clock 
+	process (BIT_CLK)
+	begin
+	if rising_edge(BIT_CLK) then 
+		if bit_count = 255 then 
+			audio_clock <= '1';
+		elsif bit_count = 0 then
+			audio_clock <= '0';
+		end if;
+	end if;
+	end process;
+	
+	
 	-- SOURCE
 	-- Toggle between mic (000)and line-in(100)
 	process (clk)
@@ -106,19 +154,22 @@ begin
 	end process;
 	
 	-- TALK TROUGHT
-	process ( clk, n_reset, L_bus_out, R_bus_out)
+	
+	
+	
+	-- process ( clk, n_reset, L_bus_out, R_bus_out)
   
-	begin		
-		if rising_edge(clk) then
-			if n_reset = '0' then
-				L_bus <= (others => '0');
-				R_bus <= (others => '0');
-			elsif(ready = '1') then
-				L_bus <= L_bus_out;
-				R_bus <= R_bus_out;
-			end if;
-		end if;
-	end process;
+	-- begin		
+		-- if rising_edge(clk) then
+			-- if n_reset = '0' then
+				-- L_bus <= (others => '0');
+				-- R_bus <= (others => '0');
+			-- elsif(ready = '1') then
+				-- L_bus <= L_bus_out;
+				-- R_bus <= R_bus_out;
+			-- end if;
+		-- end if;
+	-- end process;
 	
 
 end arch;
